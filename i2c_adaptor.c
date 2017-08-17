@@ -98,7 +98,7 @@ error:
 
 int is_complete(unsigned char *getdata )
 {
-	int i = 0 ;
+	//int i = 0 ;
 	checked_parameter(getdata) ;
 	
 	unsigned char getCrc = 0 ;
@@ -152,7 +152,7 @@ int delivery(void* dest, void*src, int len)
    @data 发送数据缓存
    @size 接受的数据长度
 */
-int mxj_i2c_send(unsigned char* data , int size) 
+int mxj_i2c_send(unsigned char* data , int size) //_i2c_write
 {
 	checked_parameter(data);
 	
@@ -174,7 +174,7 @@ int mxj_i2c_send(unsigned char* data , int size)
 error:
 	printf("I2C_SEND_ERROR: %s %s %d %\n", __FILE__, __FUNCTION__, __LINE__) ; 
 	close(i2c_fd) ;
-	return -MXJ_IO_ERRO ;  
+	return -MXJ_IO_ERRO ;
 }
 
 /*i2c 读取函数*/
@@ -209,7 +209,7 @@ erro:
    @txBuff 发送数据缓存
    @size 接受的数据长度
 */
-int mxj_i2c_receive(unsigned char *rxdata , unsigned char *txBuff , int rx_size ,int tx_size) 
+int mxj_i2c_transfer(unsigned char *rxdata , unsigned char *txBuff , int rx_size ,int tx_size) 
 {
 
 	checked_parameter(rxdata);
@@ -223,7 +223,7 @@ int mxj_i2c_receive(unsigned char *rxdata , unsigned char *txBuff , int rx_size 
 		goto WRITE_error;
 	
 /*延迟等待stm32处理数据*/		
-	usleep(100000) ;
+	usleep(300000) ;
 	
 /*读取返回数据*/	
 	i2c_fd = open("/dev/stm8_s103", O_RDWR) ;  
@@ -249,6 +249,21 @@ WRITE_error:
 
 }
 
+int i2c_retry(unsigned char *rxdata , unsigned char *txBuff , int rx_size ,int tx_size)
+{
+	int ret ;
+	ret = mxj_i2c_transfer(rxbuff , txbuff,rx_size ,tx_size); 
+	if(ret < 0)
+		goto error ;
+	if(is_complete(rxbuff))
+		goto error ;
+	return MXJ_SUCCESS ;
+
+	
+error: 
+printf("I2C_RETRY_ERROR: %s %s %d\n", __FILE__, __FUNCTION__, __LINE__) ;
+return -MXJ_FAIL;	
+}
 
 /*
    @通用传输接口
@@ -261,7 +276,8 @@ int general_transport(void* obtain, int obtain_len ,
 {
 
 	i2c_frame_t *frame_info ;
-	int ret ;	
+	int ret ;
+	int RetryCount = 0 ;//i2c接受出错重试次数
 	
 /*全局变量初始化*/
 	memset(rxbuff , 0 , DEFAULE_2048) ;	
@@ -273,13 +289,22 @@ int general_transport(void* obtain, int obtain_len ,
 /*接收数据*/
 	if(obtain_len != 0)
 	{	
-		ret = mxj_i2c_receive(rxbuff , txbuff,obtain_len+get_head_size() ,send_len+get_head_size()); 
+		ret = mxj_i2c_transfer(rxbuff , txbuff,obtain_len+get_head_size() ,send_len+get_head_size()); 
 		if(ret < 0)
 			goto error ;		
 		
 		if(is_complete(rxbuff))
-			goto error ;
-		
+		{
+			//retry=1;
+			for(RetryCount ; RetryCount >= 3 ;RetryCount++) //重试3次
+			{
+				if(!i2c_retry(rxbuff , txbuff,obtain_len+get_head_size() ,send_len+get_head_size())) 
+					break ;
+				if(RetryCount >= 3)
+					goto error ;
+			}
+			
+		}
 		if(delivery( obtain,rxbuff,obtain_len))
 			goto error ;
 /*ok*/		

@@ -8,7 +8,7 @@
 #include <microhttpd.h>
 #include "common.h"
 #include "i2c_adaptor.h"
-#include "httpd.h"
+#include "json_data.h"
 #include "file_process.h"
 
 
@@ -16,7 +16,7 @@ temp_log_t temp_info = {
 
 	.running_stat = START ,
 	/*one minute*/
-	.delay  = 60,
+	.delay  = 59,
 	.TimeCount = 0 ,
 	.time   = 0 ,
 	.temp ={
@@ -32,7 +32,7 @@ vol_log_t vol_info ={
 	
 	.running_stat = START ,
 	/*Three seconds*/
-	.delay	= 3, 
+	.delay	= 2, 
 	.TimeCount = 0 ,
 	.vol ={
 		.s3_3v = 0 ,
@@ -60,8 +60,8 @@ int mxj_voltage_proc ()
 		{
 			vol_info.TimeCount = vol_info.delay ;
 			memset(&vol_info.vol , 0 ,sizeof(vol_t));
-			if(general_transport((vol_log_t*)&vol_info.vol, sizeof(vol_t) ,
-				                   GET_VOL, DEFAULE_SUB_TYPE ,
+			if(general_transport((vol_t*)&vol_info.vol, sizeof(vol_t) ,
+				                   GET_VOL, DEFAULT_SUB_TYPE ,
 				                   &rxbuff , 0))
 				goto erro ; 	
 			
@@ -69,17 +69,18 @@ int mxj_voltage_proc ()
 			vol_f  = fopen(VOLTAGE_PATH,"a+") ;
 			if(vol_f == NULL)
 				goto erro ;
+			
 			fseek(vol_f, 0, SEEK_END);
 			vol_info.count = ftell(vol_f) ;
-		  fseek(vol_f, 0, SEEK_SET);
-		  
+		  	
+		  	
 			if(vol_info.count >= vol_info.max_count)
 			{
 				sprintf(tmp_buf,"%u,%4d,%4d\r\n",time(NULL),vol_info.vol.s3_3v,vol_info.vol.m5v) ;
 				fwrite(tmp_buf , strlen(tmp_buf), 1 , vol_f) ;
 				fclose(vol_f);
-				system("cat /home/pi/log/stm32_clent/voltage.log > /home/pi/log/stm32_clent/voltage.log.backup");
-				system("cat /dev/null > /home/pi/log/stm32_clent/voltage.log ") ;
+				system("sudo cat /home/pi/log/stm32_client/voltage.log > /home/pi/log/stm32_client/voltage.log.backup");
+				system("sudo cat /dev/null > /home/pi/log/stm32_client/voltage.log ") ;
 		    	vol_f  = fopen(VOLTAGE_PATH,"a+") ;
 				if(vol_f == NULL)
 					goto erro ;
@@ -93,6 +94,7 @@ int mxj_voltage_proc ()
 			return MXJ_SUCCESS ;
 		}
 		else 	
+			
 			vol_info.TimeCount-- ;
 			return MXJ_SUCCESS ; 
   	}
@@ -117,7 +119,7 @@ int mxj_temperature_proc()
 			
 			temp_info.TimeCount = temp_info.delay ;
 			if(general_transport((temp_t*)&temp_info.temp, sizeof(temp_t) ,
-				                   GTE_TEMP, DEFAULE_SUB_TYPE ,&temp_tx , 0) )
+				                   GTE_TEMP, DEFAULT_SUB_TYPE ,&temp_tx , 0) )
 
 				 goto erro ;
 		
@@ -127,7 +129,7 @@ int mxj_temperature_proc()
 			
 			fseek(temper_f, 0, SEEK_END);
 			temp_info.count = ftell(temper_f) ;
-			fseek(temper_f, 0, SEEK_SET);
+			
 	    
 			if(temp_info.count >= temp_info.max_count)
 			{
@@ -135,8 +137,8 @@ int mxj_temperature_proc()
 				sprintf(tmp_buf,"%u,%4d,%4d,%4d\r\n",time(NULL),temp_info.temp.EnvTemp,vol_info.vol.s3_3v,vol_info.vol.m5v) ;
 				fwrite(tmp_buf , strlen(tmp_buf), 1 , temper_f) ;
 				fclose(temper_f);
-				system("cat /home/pi/log/stm32_clent/temperature.log > /home/pi/log/stm32_clent/temperature.log.backup");
-				system("cat /dev/null > /home/pi/log/stm32_clent/temperature.log ") ;
+				system("sudo cat /home/pi/log/stm32_client/temperature.log > /home/pi/log/stm32_client/temperature.log.backup");
+				system("sudo cat /dev/null > /home/pi/log/stm32_client/temperature.log ") ;
 	      
 				temper_f  = fopen(TEMP_PATH,"a+") ;
 			if(temper_f == NULL)

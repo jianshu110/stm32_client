@@ -42,7 +42,7 @@ enum mxj_errno_e {
 #define DEFAULE_2176 2176
 
 /*默认的帧类型*/
-#define DEFAULE_SUB_TYPE 0x01 
+#define DEFAULT_SUB_TYPE 0x01 
 
 enum type{
 	
@@ -69,6 +69,8 @@ enum run_stat{
 	STOP = 0 ,
 	START 
 } ;
+
+int is_hardware_support() ;
 
 #if 1
 	#define debug(args...)  printf(args)

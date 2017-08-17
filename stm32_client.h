@@ -14,7 +14,7 @@
 #include <curl/curl.h>
 #include <microhttpd.h>
 #include "i2c_adaptor.h"
-#include "httpd.h"
+#include "json_data.h"
 #include "file_process.h"
 #include "common.h"
 #include "stm32_client.h"

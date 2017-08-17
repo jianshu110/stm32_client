@@ -10,8 +10,8 @@ CC_FLAG=-Wall
   
 PRG=stm32_client_bin
 
-OBJ+=file_process.o httpd.o 
-OBJ+=i2c_adaptor.o cjson.o 
+OBJ+=file_process.o json_data.o heartbeat.o
+OBJ+=i2c_adaptor.o cjson.o common.o
 OBJ+=stm32_client.o
   
 $(PRG):$(OBJ)  

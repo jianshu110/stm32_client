@@ -23,7 +23,7 @@ typedef struct{
 
 /*ี๛ึก*/
 typedef struct {
-	
+	int retry ;
 	frame_head_t frame_head ;
 	unsigned char * tran_data ;	
 	
